@@ -38,10 +38,11 @@
         // Load GLB model
         const loader = new THREE.GLTFLoader();
         let model;
-        loader.load('men model 6.glb', function(gltf) {
+        loader.load('https://cdn.rawgit.com/mrdoob/three.js/master/examples/models/gltf/Duck/glTF/Duck.gltf', function(gltf) {
             model = gltf.scene;
+            model.scale.set(0.1, 0.1, 0.1); // Scale the model down
             scene.add(model);
-            camera.position.z = 5;
+            camera.position.set(0, 0, 5); // Adjust camera position
             animate();
         }, undefined, function(error) {
             console.error('An error occurred while loading the model:', error);
@@ -67,7 +68,6 @@
         });
 
         document.getElementById('weight').addEventListener('input', function() {
-            // Weight might affect physics if you add physics later; currently, this is just a placeholder.
             console.log('Weight changed to:', this.value);
         });
 
