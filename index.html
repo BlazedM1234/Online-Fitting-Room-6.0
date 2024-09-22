@@ -3,108 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js 3D Model Viewer</title>
+    <title>Three.js Model Viewer</title>
     <style>
-        body { margin: 0; }
+        body { margin: 0; display: flex; flex-direction: column; align-items: center; }
         canvas { display: block; }
+        .controls { margin: 20px; }
+        input { margin: 5px; }
     </style>
-    <!-- Import Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-    <!-- HTML elements for inputs -->
-    <input type="color" id="colorPicker" value="#ff0000">
-    <input type="number" id="heightInput" placeholder="Height (cm)" min="50" max="250" step="1" value="180">
-    <input type="number" id="widthInput" placeholder="Width (cm)" min="30" max="150" step="1" value="50">
-    <input type="number" id="weightInput" placeholder="Weight (kg)" min="30" max="150" step="1" value="70">
-
+    <div class="controls">
+        <label>Height: <input type="number" id="height" placeholder="Height" /></label>
+        <label>Width: <input type="number" id="width" placeholder="Width" /></label>
+        <label>Weight: <input type="number" id="weight" placeholder="Weight" /></label>
+        <label>Skin Color: <input type="color" id="skinColor" value="#ffffff" /></label>
+    </div>
     <script>
-        // Set up the scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Add ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(ambientLight);
-
-        // Add directional light for better illumination
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
+        directionalLight.position.set(1, 1, 1).normalize();
         scene.add(directionalLight);
 
-        // Load the GLB model
+        // Load GLB model
         const loader = new THREE.GLTFLoader();
         let model;
-
-        loader.load('https://blazedm1234.github.io/Online-Fitting-Room-6.0/men-model-6.glb', function(gltf) {
+        loader.load('men model 6.glb', function(gltf) {
             model = gltf.scene;
             scene.add(model);
-
-            // Position the camera further back
             camera.position.z = 5;
-
-            // Animate rotation
-            function animate() {
-                requestAnimationFrame(animate);
-                if (model) {
-                    model.rotation.y += 0.01;  // Rotate the model on Y axis
-                }
-                renderer.render(scene, camera);
-            }
-
             animate();
         }, undefined, function(error) {
             console.error('An error occurred while loading the model:', error);
         });
 
-        // Handle window resizing
-        window.addEventListener('resize', function() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            renderer.setSize(width, height);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
+        // Add OrbitControls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.25;
+        controls.screenSpacePanning = false;
+
+        // Input listeners
+        document.getElementById('height').addEventListener('input', function() {
+            if (model) {
+                model.scale.y = parseFloat(this.value) || 1;
+            }
         });
 
-        // Function to update model color
-        function updateModelColor(color) {
+        document.getElementById('width').addEventListener('input', function() {
             if (model) {
-                model.traverse((child) => {
+                model.scale.x = parseFloat(this.value) || 1;
+            }
+        });
+
+        document.getElementById('weight').addEventListener('input', function() {
+            // Weight might affect physics if you add physics later; currently, this is just a placeholder.
+            console.log('Weight changed to:', this.value);
+        });
+
+        document.getElementById('skinColor').addEventListener('input', function() {
+            if (model) {
+                model.traverse(function(child) {
                     if (child.isMesh) {
-                        child.material.color.set(color); // Apply the color to the model
+                        child.material.color.set(this.value);
                     }
-                });
+                }.bind(this));
             }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
         }
-
-        // Event listeners for inputs
-        document.getElementById('colorPicker').addEventListener('input', (event) => {
-            updateModelColor(event.target.value);
-        });
-
-        document.getElementById('heightInput').addEventListener('input', (event) => {
-            const heightValue = parseFloat(event.target.value);
-            if (model) {
-                model.scale.y = heightValue / 180; // Adjust height based on the input
-            }
-        });
-
-        document.getElementById('widthInput').addEventListener('input', (event) => {
-            const widthValue = parseFloat(event.target.value);
-            if (model) {
-                model.scale.x = widthValue / 50; // Adjust width based on the input
-            }
-        });
-
-        document.getElementById('weightInput').addEventListener('input', (event) => {
-            const weightValue = parseFloat(event.target.value);
-            // Implement functionality for weight if needed
-            console.log('Weight:', weightValue);
-        });
     </script>
 </body>
 </html>
